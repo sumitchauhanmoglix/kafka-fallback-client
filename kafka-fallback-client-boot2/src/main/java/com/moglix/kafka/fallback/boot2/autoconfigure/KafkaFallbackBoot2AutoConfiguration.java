@@ -59,7 +59,7 @@ public class KafkaFallbackBoot2AutoConfiguration {
             @Autowired(required = false) ObjectMapper objectMapper,
             CircuitBreaker circuitBreaker,
             FallbackHttpClient fallbackHttpClient,
-            @Autowired(required = false) KafkaTemplate<Object, Object> kafkaTemplate) {
+            @Autowired(required = false) KafkaTemplate<?, ?> kafkaTemplate) {
 
         String appName = properties.getApplicationName();
         if (appName == null || appName.trim().isEmpty()) {

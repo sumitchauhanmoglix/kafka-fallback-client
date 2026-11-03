@@ -22,19 +22,20 @@ import java.util.concurrent.CompletableFuture;
  */
 public class DefaultKafkaFallbackClient extends AbstractKafkaFallbackClient {
 
-    private final KafkaTemplate<Object, Object> kafkaTemplate;
+    private final KafkaTemplate<?, ?> kafkaTemplate;
 
     public DefaultKafkaFallbackClient(KafkaFallbackProperties properties,
                                       String defaultApplicationName,
                                       ObjectMapper objectMapper,
                                       CircuitBreaker circuitBreaker,
                                       FallbackHttpClient fallbackHttpClient,
-                                      KafkaTemplate<Object, Object> kafkaTemplate) {
+                                      KafkaTemplate<?, ?> kafkaTemplate) {
         super(properties, defaultApplicationName, objectMapper, circuitBreaker, fallbackHttpClient);
         this.kafkaTemplate = kafkaTemplate;
     }
 
     @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
     protected CompletableFuture<Void> doSendToKafka(String topic, String payload, Map<String, String> headers) {
         CompletableFuture<Void> future = new CompletableFuture<>();
 
@@ -44,7 +45,7 @@ public class DefaultKafkaFallbackClient extends AbstractKafkaFallbackClient {
         }
 
         try {
-            ProducerRecord<Object, Object> record = new ProducerRecord<>(topic, payload);
+            ProducerRecord record = new ProducerRecord(topic, payload);
             if (headers != null && !headers.isEmpty()) {
                 for (Map.Entry<String, String> entry : headers.entrySet()) {
                     if (entry.getKey() != null) {
@@ -55,10 +56,10 @@ public class DefaultKafkaFallbackClient extends AbstractKafkaFallbackClient {
                 }
             }
 
-            ListenableFuture<SendResult<Object, Object>> listenableFuture = kafkaTemplate.send(record);
-            listenableFuture.addCallback(new ListenableFutureCallback<SendResult<Object, Object>>() {
+            ListenableFuture<SendResult> listenableFuture = ((KafkaTemplate) kafkaTemplate).send(record);
+            listenableFuture.addCallback(new ListenableFutureCallback<SendResult>() {
                 @Override
-                public void onSuccess(SendResult<Object, Object> result) {
+                public void onSuccess(SendResult result) {
                     future.complete(null);
                 }
 
@@ -74,7 +75,7 @@ public class DefaultKafkaFallbackClient extends AbstractKafkaFallbackClient {
         return future;
     }
 
-    public KafkaTemplate<Object, Object> getKafkaTemplate() {
+    public KafkaTemplate<?, ?> getKafkaTemplate() {
         return kafkaTemplate;
     }
 }

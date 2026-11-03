@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 
 class DefaultKafkaFallbackClientBoot3Test {
 
-    private KafkaTemplate<Object, Object> mockKafkaTemplate;
+    private KafkaTemplate<?, ?> mockKafkaTemplate;
     private FallbackHttpClient mockFallbackHttpClient;
     private DefaultKafkaFallbackClient client;
 
@@ -56,15 +56,15 @@ class DefaultKafkaFallbackClientBoot3Test {
     }
 
     @Test
-    @DisplayName("Should send ProducerRecord to Spring Kafka 3 KafkaTemplate with custom headers")
-    @SuppressWarnings("unchecked")
+    @DisplayName("Should send ProducerRecord to Spring Kafka 3 KafkaTemplate<?, ?> with custom headers")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     void testSendToKafkaWithHeaders() throws Exception {
-        CompletableFuture<SendResult<Object, Object>> future = new CompletableFuture<>();
-        ProducerRecord<Object, Object> dummyRecord = new ProducerRecord<>("orders", "dummy");
+        CompletableFuture<SendResult> future = new CompletableFuture<>();
+        ProducerRecord dummyRecord = new ProducerRecord("orders", "dummy");
         RecordMetadata meta = new RecordMetadata(new TopicPartition("orders", 0), 0, 0, 0, 0L, 0, 0);
-        future.complete(new SendResult<>(dummyRecord, meta));
+        future.complete(new SendResult(dummyRecord, meta));
 
-        when(mockKafkaTemplate.send(any(ProducerRecord.class))).thenReturn(future);
+        when(((KafkaTemplate) mockKafkaTemplate).send(any(ProducerRecord.class))).thenReturn(future);
 
         Map<String, String> headers = Collections.singletonMap("traceId", "boot3-trace-789");
         PublishResult result = client.publish("orders", "{\"orderId\":\"101\"}", headers);
@@ -72,10 +72,10 @@ class DefaultKafkaFallbackClientBoot3Test {
         assertEquals(PublishStatus.SENT_TO_KAFKA, result.getStatus());
         assertTrue(result.isSentToKafka());
 
-        ArgumentCaptor<ProducerRecord<Object, Object>> captor = ArgumentCaptor.forClass(ProducerRecord.class);
-        verify(mockKafkaTemplate).send(captor.capture());
+        ArgumentCaptor<ProducerRecord> captor = ArgumentCaptor.forClass(ProducerRecord.class);
+        verify(((KafkaTemplate) mockKafkaTemplate)).send(captor.capture());
 
-        ProducerRecord<Object, Object> captured = captor.getValue();
+        ProducerRecord captured = captor.getValue();
         assertEquals("orders", captured.topic());
         assertEquals("{\"orderId\":\"101\"}", captured.value());
         assertNotNull(captured.headers().lastHeader("traceId"));
