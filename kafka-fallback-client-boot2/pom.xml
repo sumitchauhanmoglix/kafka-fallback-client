@@ -13,7 +13,7 @@
 
     <artifactId>kafka-fallback-client-boot2</artifactId>
     <name>Kafka Fallback Client (Spring Boot 2)</name>
-    <description>Kafka Fallback Client module for Spring Boot 2 and Java 8+</description>
+    <description>Kafka Fallback Client starter for Spring Boot 2 and Java 8+</description>
 
     <properties>
         <java.version>8</java.version>
@@ -34,21 +34,42 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- Shared Core Module -->
+        <dependency>
+            <groupId>com.moglix</groupId>
+            <artifactId>kafka-fallback-client-core</artifactId>
+        </dependency>
+
+        <!-- Spring Boot 2 Starter & Kafka -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
         </dependency>
+
+        <!-- Configuration Processor for IDE Metadata -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
         </dependency>
+
+        <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

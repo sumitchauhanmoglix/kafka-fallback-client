@@ -8,8 +8,24 @@ on:
   workflow_dispatch:
 
 jobs:
+  verify-module-parity:
+    name: Verify Module Parity (Boot 2 vs Boot 3)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run Module Sync & Parity Check
+        run: python3 scripts/check-module-sync.py
+
   build-and-test:
     name: ${{ matrix.name }}
+    needs: verify-module-parity
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
