@@ -14,6 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -58,11 +59,20 @@ public class KafkaFallbackBoot3AutoConfiguration {
             @Autowired(required = false) ObjectMapper objectMapper,
             CircuitBreaker circuitBreaker,
             FallbackHttpClient fallbackHttpClient,
-            @Autowired(required = false) KafkaTemplate<?, ?> kafkaTemplate) {
+            @Autowired(required = false) KafkaTemplate<?, ?> kafkaTemplate,
+            @Autowired(required = false) ApplicationContext applicationContext) {
 
         String appName = properties.getApplicationName();
         if (appName == null || appName.trim().isEmpty()) {
             appName = environment.getProperty("spring.application.name", "unknown-application");
+        }
+
+        KafkaTemplate<?, ?> chosenTemplate = kafkaTemplate;
+        if (applicationContext != null && applicationContext.containsBean("stringKafkaTemplate")) {
+            try {
+                chosenTemplate = (KafkaTemplate<?, ?>) applicationContext.getBean("stringKafkaTemplate");
+            } catch (Throwable ignored) {
+            }
         }
 
         return new DefaultKafkaFallbackClient(
@@ -71,7 +81,7 @@ public class KafkaFallbackBoot3AutoConfiguration {
                 objectMapper != null ? objectMapper : new ObjectMapper(),
                 circuitBreaker,
                 fallbackHttpClient,
-                kafkaTemplate
+                chosenTemplate
         );
     }
 }

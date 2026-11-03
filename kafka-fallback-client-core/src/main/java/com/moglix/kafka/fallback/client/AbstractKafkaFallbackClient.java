@@ -133,7 +133,12 @@ public abstract class AbstractKafkaFallbackClient implements KafkaFallbackOperat
         }
 
         // 3. Dispatch to Kafka with timeout
-        CompletableFuture<Void> kafkaSendFuture = doSendToKafka(validated.getTopic(), validated.getKafkaPayloadString(), headers);
+        CompletableFuture<Void> kafkaSendFuture = doSendToKafka(
+                validated.getTopic(),
+                validated.getKafkaPayloadString(),
+                validated.getFallbackPayload(),
+                headers
+        );
         long kafkaTimeoutMs = properties.getTimeouts().getKafkaSendTimeoutMs();
 
         // Attach Java 8 compatible timeout to the Kafka future
@@ -198,13 +203,18 @@ public abstract class AbstractKafkaFallbackClient implements KafkaFallbackOperat
     }
 
     /**
-     * Module-specific Kafka dispatch.
+     * Module-specific Kafka dispatch with fallbackPayload available for serializer adaptation.
      *
-     * @param topic   target topic
-     * @param payload JSON string payload
-     * @param headers optional headers
+     * @param topic           target topic
+     * @param payload         JSON string payload
+     * @param fallbackPayload structured payload (Object or JsonNode)
+     * @param headers         optional headers
      * @return future that completes when Kafka acks the message
      */
+    protected CompletableFuture<Void> doSendToKafka(String topic, String payload, Object fallbackPayload, Map<String, String> headers) {
+        return doSendToKafka(topic, payload, headers);
+    }
+
     protected abstract CompletableFuture<Void> doSendToKafka(String topic, String payload, Map<String, String> headers);
 
     public KafkaFallbackProperties getProperties() {
