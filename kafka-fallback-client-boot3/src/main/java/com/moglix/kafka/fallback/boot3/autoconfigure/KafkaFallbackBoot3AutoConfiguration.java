@@ -40,10 +40,13 @@ public class KafkaFallbackBoot3AutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(FallbackHttpClient.class)
-    public FallbackHttpClient kafkaFallbackHttpClient(Boot3KafkaFallbackProperties properties) {
+    public FallbackHttpClient kafkaFallbackHttpClient(
+            Boot3KafkaFallbackProperties properties,
+            @Autowired(required = false) ObjectMapper objectMapper) {
         return new RestTemplateFallbackHttpClient(
                 properties.getApiUrl(),
                 properties.getApiKey(),
+                objectMapper,
                 properties.getTimeouts().getApiConnectTimeoutMs(),
                 properties.getTimeouts().getApiReadTimeoutMs(),
                 properties.getRetry().getMaxAttempts(),

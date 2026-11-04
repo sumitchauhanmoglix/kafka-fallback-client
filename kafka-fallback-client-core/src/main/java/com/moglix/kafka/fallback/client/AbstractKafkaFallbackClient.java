@@ -64,6 +64,7 @@ public abstract class AbstractKafkaFallbackClient implements KafkaFallbackOperat
                 new RestTemplateFallbackHttpClient(
                         this.properties.getApiUrl(),
                         this.properties.getApiKey(),
+                        objectMapper,
                         this.properties.getTimeouts().getApiConnectTimeoutMs(),
                         this.properties.getTimeouts().getApiReadTimeoutMs(),
                         this.properties.getRetry().getMaxAttempts(),

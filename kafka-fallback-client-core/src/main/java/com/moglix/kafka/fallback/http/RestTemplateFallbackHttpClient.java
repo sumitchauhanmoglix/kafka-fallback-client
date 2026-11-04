@@ -1,5 +1,6 @@
 package com.moglix.kafka.fallback.http;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.moglix.kafka.fallback.model.FallbackApiResponse;
 import com.moglix.kafka.fallback.model.FallbackMessageRequest;
 import org.slf4j.Logger;
@@ -10,12 +11,15 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
 
 /**
  * RestTemplate implementation of FallbackHttpClient.
+ * Configures timeouts, retries, and wires the shared ObjectMapper into RestTemplate's message converters.
  */
 public class RestTemplateFallbackHttpClient implements FallbackHttpClient {
 
@@ -28,10 +32,20 @@ public class RestTemplateFallbackHttpClient implements FallbackHttpClient {
     private final long retryBackoffMs;
 
     public RestTemplateFallbackHttpClient(String apiUrl, String apiKey, int connectTimeoutMs, int readTimeoutMs) {
-        this(apiUrl, apiKey, connectTimeoutMs, readTimeoutMs, 2, 200L);
+        this(apiUrl, apiKey, null, connectTimeoutMs, readTimeoutMs, 2, 200L);
     }
 
     public RestTemplateFallbackHttpClient(String apiUrl, String apiKey, int connectTimeoutMs, int readTimeoutMs, int maxRetries, long retryBackoffMs) {
+        this(apiUrl, apiKey, null, connectTimeoutMs, readTimeoutMs, maxRetries, retryBackoffMs);
+    }
+
+    public RestTemplateFallbackHttpClient(String apiUrl,
+                                          String apiKey,
+                                          ObjectMapper objectMapper,
+                                          int connectTimeoutMs,
+                                          int readTimeoutMs,
+                                          int maxRetries,
+                                          long retryBackoffMs) {
         this.apiUrl = apiUrl;
         this.apiKey = apiKey;
         this.maxRetries = Math.max(1, maxRetries);
@@ -41,6 +55,20 @@ public class RestTemplateFallbackHttpClient implements FallbackHttpClient {
         factory.setConnectTimeout(Math.max(100, connectTimeoutMs));
         factory.setReadTimeout(Math.max(100, readTimeoutMs));
         this.restTemplate = new RestTemplate(factory);
+
+        if (objectMapper != null) {
+            boolean converterConfigured = false;
+            for (HttpMessageConverter<?> converter : this.restTemplate.getMessageConverters()) {
+                if (converter instanceof MappingJackson2HttpMessageConverter) {
+                    ((MappingJackson2HttpMessageConverter) converter).setObjectMapper(objectMapper);
+                    converterConfigured = true;
+                    break;
+                }
+            }
+            if (!converterConfigured) {
+                this.restTemplate.getMessageConverters().add(new MappingJackson2HttpMessageConverter(objectMapper));
+            }
+        }
     }
 
     // Constructor for testing with mock RestTemplate
@@ -109,5 +137,9 @@ public class RestTemplateFallbackHttpClient implements FallbackHttpClient {
 
     public String getApiUrl() {
         return apiUrl;
+    }
+
+    public RestTemplate getRestTemplate() {
+        return restTemplate;
     }
 }
